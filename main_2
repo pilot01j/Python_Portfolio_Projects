@@ -1,0 +1,59 @@
+import csv
+import pyodbc
+from seach_news import search_news_Anticoruptie
+from extract_from_json import extract_form_json_Anticoruptie, extract_form_json_ZDG
+
+
+def create_table():
+    try:
+        conn = pyodbc.connect('DSN=LocalSQLServer;DATABASE=master;Trusted_Connection=yes;')
+        cursor = conn.cursor()
+        create_table_query = '''
+        CREATE TABLE IF NOT EXISTS TableName (
+            id INT IDENTITY(1,1) PRIMARY KEY,
+            company_name NVARCHAR(255),
+            company_IDNO NVARCHAR(255),
+            title NVARCHAR(255),
+            url NVARCHAR(255),
+            date DATE
+        );
+        '''
+        cursor.execute(create_table_query)
+
+        conn.commit()
+        conn.close()
+        print("Table created successfully.")
+    except Exception as e:
+        print("An error occurred:", e)
+
+
+def save_to_database(company_name, company_IDNO, title, url, date):
+    try:
+        conn = pyodbc.connect('DSN=LocalSQLServer;DATABASE=master;Trusted_Connection=yes;')
+        cursor = conn.cursor()
+
+        cursor.execute("INSERT INTO TableName (company_name, company_IDNO, title, url, date) VALUES (?, ?, ?, ?, ?)",
+                       (company_name, company_IDNO, title, url, date))
+
+        conn.commit()
+        conn.close()
+
+        print("Data saved to database successfully.")
+
+    except Exception as e:
+        print("An error occurred:", e)
+
+
+with open('clients_info.csv', newline='') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        company_name = row['SHORT_NAME']
+        print(type(company_name))
+        print(company_name)
+        company_IDNO = row['LEGAL_ID']
+        # print(company_IDNO)
+        search_news_Anticoruptie(company_name)
+        title, url, date = extract_form_json_Anticoruptie()
+
+        save_to_database(company_name, company_IDNO, title, url, date)
+
