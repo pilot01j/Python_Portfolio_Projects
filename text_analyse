@@ -1,0 +1,39 @@
+import time
+
+import pandas as pd
+import g4f
+
+def ask_gpt_4(promt:str)->str:
+    response = g4f.ChatCompletion.create(
+        model=g4f.models.gpt_4,
+        messages=[{"role": "user", "content": promt}],
+        max_tokens=1
+    )
+    # print(response)
+    return response
+
+# print(ask_gpt_4("Citi oameni locuiesc in Chisinau?"))
+
+def adauga_tip_articol(fisier_csv):
+    df = pd.read_csv(fisier_csv)
+    tip_articol = []
+
+    # Parcurgem fiecare rând din DataFrame
+    for index, row in df.iterrows():
+        title = row.iloc[4]
+
+        company_name = row.iloc[2]
+
+        gpt_result = ask_gpt_4(f"răspunde doar cu cuvintele 'negativ' sau 'pozitiv' , dacă următorul articol : '{title}' este pozitiv sau negativ despre compania {company_name}, nu scrie ca ai analizat articolul, nu scrie cum a fost analizat articolul, nu scrie motivul alegeri, nu scrie despre rezultatele comaniei , nu scrie nimic inafara de cuvintele pozitiv sau negativ.")
+        time.sleep(35)
+        tip_articol.append(str(gpt_result))
+        print(str(gpt_result), ": ", company_name, ": ", title)
+
+    # Adăugăm lista cu valorile "tip_articol" ca o nouă coloană în DataFrame
+    df.insert(1, 'tip_articol', tip_articol)
+
+    # Salvăm DataFrame-ul actualizat în același fișier CSV
+    df.to_csv(fisier_csv, index=False)
+
+fisier_input = 'database.csv'
+adauga_tip_articol(fisier_input)
